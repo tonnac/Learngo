@@ -11,4 +11,9 @@ func main() {
 	fmt.Println(account.Balance())
 	account.Deposit(32)
 	fmt.Println(account.Balance())
+	err := account.Withdraw(50)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(account.Balance())
 }
