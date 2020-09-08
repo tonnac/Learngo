@@ -3,12 +3,23 @@ package main
 import "fmt"
 
 func main() {
-	names := []string{"qweq", "adasd", "dsfdsfd"}
-	names0 := append(names, "ekrjer")
-	names1 := append(names0, "pwerewr")
-	names2 := append(names1, "mmkwe")
-	fmt.Println(names)
-	fmt.Println(names0)
-	fmt.Println(names1)
-	fmt.Println(names2)
+	// lkes := map[string]string{"name": "nico", "age": "12"}
+	kfd := [5]map[string]string{
+		{"name": "qweqwe", "age": "32"},
+		{"name0": "asdasd", "age0": "42"},
+		{"name1": "zxczxc", "age1": "52"},
+		{"name2": "rtyrty", "age2": "62"},
+		{"name3": "fghfgh", "age3": "72"}}
+	// for _, value := range lkes {
+	// 	fmt.Println(value)
+	// }
+
+	for _, map0 := range kfd {
+		for key, value := range map0 {
+			fmt.Println(key, value)
+		}
+	}
+
+	// fmt.Println(kfd)
+	// fmt.Println(lkes)
 }
