@@ -1,7 +1,26 @@
 package main
 
-import "github.com/tonnac/learngo/scrapper"
+import (
+	"strings"
+
+	"github.com/labstack/echo/v4"
+	"github.com/tonnac/learngo/scrapper"
+)
+
+func handleHome(c echo.Context) error {
+	return c.File("home.html")
+}
+
+func handleScrape(c echo.Context) error {
+	term := strings.ToLower(scrapper.CleanString(c.FormValue("term")))
+
+	return nil
+}
 
 func main() {
-	scrapper.Scrape("python")
+	e := echo.New()
+	e.GET("/", handleHome)
+	e.POST("/scrape", handleScrape)
+	e.Logger.Fatal(e.Start(":1323"))
+	// scrapper.Scrape("python")
 }
