@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -19,15 +20,20 @@ type extractedJob struct {
 var baseURL string = "https://kr.indeed.com/jobs?q=python"
 
 func main() {
-	totalPages := getPages()
+	var jobs []extractedJob
+	// totalPages := getPages()
 
-	for i := 0; i < totalPages; i++ {
-		getPage(i)
+	for i := 0; i < 1; i++ {
+		extractedJobs := getPage(i)
+		jobs = append(jobs, extractedJobs...)
 	}
+
+	fmt.Println(jobs)
 }
 
-func getPage(page int) {
+func getPage(page int) []extractedJob {
 	// strconv.Itoa(page * 50)
+	var jobs []extractedJob
 	pageURL := fmt.Sprintf("%s&start=%d", baseURL, page*10)
 	res, err := http.Get(pageURL)
 	checkErr(err)
@@ -40,12 +46,33 @@ func getPage(page int) {
 	searchCards := doc.Find(".jobsearch-SerpJobCard")
 
 	searchCards.Each(func(i int, card *goquery.Selection) {
-		id, _ := card.Attr("data-jk")
-		fmt.Println(id)
-		title := card.Find(".title>a").Text()
-		location := card.Find(".sjcl").Text()
-		fmt.Println(id, title, location)
+		job := extractJob(card)
+		jobs = append(jobs, job)
 	})
+
+	return jobs
+}
+
+func extractJob(card *goquery.Selection) extractedJob {
+	id, _ := card.Attr("data-jk")
+	title := card.Find(".title>a").Text()
+	location := cleanString(card.Find(".sjcl").Text())
+	salary := cleanString(card.Find(".salaryText").Text())
+	summary := cleanString(card.Find(".summary").Text())
+
+	return extractedJob{
+		id:       id,
+		title:    title,
+		location: location,
+		salary:   salary,
+		summary:  summary}
+	/*
+		Location 찾기
+			card.Find(".sjcl>div").Each(func(i int, s *goquery.Selection) {
+				loc, _ := s.Attr("data-rc-loc")
+				fmt.Println(loc)
+			})
+	*/
 }
 
 func getPages() int {
@@ -78,5 +105,5 @@ func checkCode(res *http.Response) {
 }
 
 func cleanString(str string) string {
-
+	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
 }
