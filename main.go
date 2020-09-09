@@ -23,15 +23,47 @@ var baseURL string = "https://kr.indeed.com/jobs?q=python"
 
 func main() {
 	var jobs []extractedJob
+	c := make(chan []extractedJob)
 	totalPages := getPages()
 
 	for i := 0; i < totalPages; i++ {
-		extractedJobs := getPage(i)
-		jobs = append(jobs, extractedJobs...)
+		go getPage(i, c)
+	}
+	for i := 0; i < totalPages; i++ {
+		jobs = append(jobs, <-c...)
 	}
 
 	writeJobs(jobs)
 	fmt.Println("Done, extracted", len(jobs))
+}
+
+func getPage(page int, mainC chan<- []extractedJob) {
+	// strconv.Itoa(page * 50)
+
+	c := make(chan extractedJob)
+
+	var jobs []extractedJob
+	pageURL := fmt.Sprintf("%s&start=%d", baseURL, page*10)
+	fmt.Println("Requesting", pageURL)
+	res, err := http.Get(pageURL)
+	checkErr(err)
+	checkCode(res)
+
+	defer res.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	checkErr(err)
+
+	searchCards := doc.Find(".jobsearch-SerpJobCard")
+
+	searchCards.Each(func(i int, card *goquery.Selection) {
+		go extractJob(card, c)
+	})
+
+	for i := 0; i < searchCards.Length(); i++ {
+		jobs = append(jobs, <-c)
+	}
+
+	mainC <- jobs
 }
 
 func writeJobs(jobs []extractedJob) {
@@ -51,34 +83,6 @@ func writeJobs(jobs []extractedJob) {
 		jwErr := w.Write(jobSlice)
 		checkErr(jwErr)
 	}
-}
-
-func getPage(page int) []extractedJob {
-	// strconv.Itoa(page * 50)
-
-	c := make(chan extractedJob)
-
-	var jobs []extractedJob
-	pageURL := fmt.Sprintf("%s&start=%d", baseURL, page*10)
-	res, err := http.Get(pageURL)
-	checkErr(err)
-	checkCode(res)
-
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	checkErr(err)
-
-	searchCards := doc.Find(".jobsearch-SerpJobCard")
-
-	searchCards.Each(func(i int, card *goquery.Selection) {
-		go extractJob(card, c)
-	})
-
-	for i := 0; i < searchCards.Length(); i++ {
-		jobs = append(jobs, <-c)
-	}
-
-	return jobs
 }
 
 func extractJob(card *goquery.Selection, c chan<- extractedJob) {
